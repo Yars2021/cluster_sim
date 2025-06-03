@@ -19,7 +19,7 @@ jobs:
       image: erlang:22.0.7
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
     - uses: erlef/setup-beam@v1
       with:
         otp-version: '26'
@@ -30,3 +30,4 @@ jobs:
     - name: Linter
       run: rebar3 lint
       working-directory: ${{github.workspace}}
+  
