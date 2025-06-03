@@ -1,0 +1,32 @@
+name: Erlang CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    container:
+      image: erlang:22.0.7
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: erlef/setup-beam@v1
+      with:
+        otp-version: '26'
+        rebar3-version: '3.22.1'
+    - name: Compile
+      run: rebar3 compile
+      working-directory: ${{github.workspace}}
+    - name: Linter
+      run: rebar3 lint
+      working-directory: ${{github.workspace}}
