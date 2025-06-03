@@ -4,8 +4,9 @@
 
 
 init_cluster(ClusterSize, BrokenNodes) ->
-    Cluster = [{ID, spawn(fun() -> worker:init(self(), ID) end)} || ID <- lists:seq(1, ClusterSize)],
-    
+    Cluster = [{ID, spawn(fun() -> worker:init(self(), ID) end)}
+               || ID <- lists:seq(1, ClusterSize)],
+
     lists:foreach(fun({_, PidFrom}) ->
         lists:foreach(fun({_, PidTo}) ->
             PidFrom ! {connect, PidTo}
