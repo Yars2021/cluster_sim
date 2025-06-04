@@ -9,6 +9,10 @@ init(Monitor, ID) ->
 
 main_routine(Monitor, ID, Status, Strategy, Connections) ->
     receive
+        {get_connections, Requester} ->
+            Requester ! {Connections},
+            main_routine(Monitor, ID, Strategy, Strategy, Connections);
+
         {break} ->
             main_routine(Monitor, ID, broken, Strategy, Connections);
 
@@ -65,20 +69,6 @@ ping_next(StartIndex, Size, TTL, Connections) when Size > length(Connections) ->
     ping_next(StartIndex, length(Connections), TTL, Connections);
 
 ping_next(StartIndex, Size, TTL, Connections) ->
-    lists:foreach(fun({_, Pid}) -> Pid ! {ping, TTL} end, get_group(StartIndex, Size, Connections)).
-
-
-get_group(_, 0, _) ->
-    [];
-
-get_group(_, _, []) ->
-    [];
-
-get_group(Start, Size, Connections) when Size > length(Connections) ->
-    get_group(Start, length(Connections), Connections);
-
-get_group(Start, Size, [{ID, _} | Tail]) when ID < Start ->
-    get_group(Start, Size, Tail);
-
-get_group(Start, Size, [Head | Tail]) ->
-    [Head | get_group(Start + 1, Size - 1, Tail)].
+    lists:foreach(fun({_, Pid}) ->
+        Pid ! {ping, TTL}
+    end, lists:sublist(Connections, StartIndex, Size)).
