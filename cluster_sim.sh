@@ -18,7 +18,7 @@ elif [[ $1 = "help" ]]; then
     <num of nodes>
     <max out edges of each node>
     <max num of broken nodes>
-    <node timeout in ms>
+    <node timeout in s>
     <packet TTL in hops>"
   echo "List of strategies example: \"[strat1,strat2,...]\""
   echo "Supported strategies:
@@ -32,23 +32,36 @@ elif [[ $1 = "clean" ]]; then
   rm -rf ./cluster/*.beam
   rm -rf ./cluster/*.dump
 elif [ $# -ge 6 ]; then
-  # Re-Create directories
-  rmdir ${OUTPUT_DIR} 2> /dev/null
-  rmdir ${DATA_DIR} 2> /dev/null
+  # Cleanup
+  echo "Cleaning up..."
+
+  rm -rf ${OUTPUT_DIR} 2> /dev/null
+  rm -rf ${DATA_DIR} 2> /dev/null
+  rm -rf ./cluster/*.beam
+  rm -rf ./cluster/*.dump
+
+  # Create directories
+  echo "Preparing directories..."
 
   mkdir ${OUTPUT_DIR} 2> /dev/null
   mkdir ${DATA_DIR} 2> /dev/null
 
   # Compile and run Erlang files
+  echo "Compiling and running Erlang core..."
+
   cd ./cluster/
   erlc ./worker.erl ./monitor.erl
-  erl -noshell -run monitor shell_autorun $1 $2 $3 $4 $5 $6 -s init stop > /dev/null 2>&1
+  erl -noshell -run monitor shell_autorun $1 $2 $3 $4 $5 $6 -s init stop #> /dev/null 2>&1
   cd ../
 
   # Generate png from .dot file
+  echo "Generating cluster map..."
+
   circo -T svg ${DATA_DIR}/cluster.dot -o ${OUTPUT_DIR}/cluster.svg
 
   # Create statistics html page
+  echo "Forming an html report..."
+
   python3 ./data_processor/simulation_analyzer.py ${DATA_DIR} ${OUTPUT_DIR} $2 $6
 
   echo "Simulation done, results can be found here: " `pwd`/${OUTPUT_DIR}

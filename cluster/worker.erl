@@ -4,36 +4,46 @@
 
 
 init(Monitor, ID) ->
-    main_routine(Monitor, ID, ok, not_specified, [], false).
+    main_routine(Monitor, ID, ok, not_specified, [], false, false).
 
 
-main_routine(Monitor, ID, Status, Strategy, Connections, Reported) ->
+main_routine(Monitor, ID, Status, Strategy, Connections, Reported, TermReported) ->
     receive
         {reset_reported} ->
-            main_routine(Monitor, ID, Status, Strategy, Connections, false);
+            main_routine(Monitor, ID, Status, Strategy, Connections, false, false);
 
         {set_monitor, NewMonitor} ->
-            main_routine(NewMonitor, ID, Status, Strategy, Connections, Reported);
+            main_routine(NewMonitor, ID, Status, Strategy, Connections, Reported, TermReported);
 
         {get_connections, Requester} ->
             Requester ! {Connections},
-            main_routine(Monitor, ID, Status, Strategy, Connections, Reported);
+            main_routine(Monitor, ID, Status, Strategy, Connections, Reported, TermReported);
 
         {break} ->
-            main_routine(Monitor, ID, broken, Strategy, Connections, Reported);
+            main_routine(Monitor, ID, broken, Strategy, Connections, Reported, TermReported);
 
         {fix} ->
-            main_routine(Monitor, ID, ok, Strategy, Connections, Reported);
+            main_routine(Monitor, ID, ok, Strategy, Connections, Reported, TermReported);
 
         {strategy, NewStrategy} ->
-            main_routine(Monitor, ID, Status, NewStrategy, Connections, Reported);
+            main_routine(Monitor, ID, Status, NewStrategy, Connections, Reported, TermReported);
 
         {connect, Node} ->
-            main_routine(Monitor, ID, Status, Strategy, lists:sort([Node | Connections]), Reported);
+            main_routine(Monitor, ID, Status, Strategy, lists:sort([Node | Connections]), Reported, TermReported);
 
         {ping, 0, Route} ->
-            Monitor ! {ping_recv, ID, 0, [ID | Route], ttl_end},
-            main_routine(Monitor, ID, Status, Strategy, Connections, true);
+            case {Monitor, TermReported} of
+                {no_monitor, _} ->
+                    io:fwrite("");
+
+                {_, false} ->
+                    Monitor ! {ping_recv, ID, 0, [ID | Route], terminated};
+
+                _ ->
+                    io:fwrite("")
+            end,
+
+            main_routine(Monitor, ID, Status, Strategy, Connections, Reported, true);
 
         {ping, TTL, Route} ->
             TransmitStatus = case Status of
@@ -62,23 +72,23 @@ main_routine(Monitor, ID, Status, Strategy, Connections, Reported) ->
                 _ -> ping_fail
             end,
 
-            case Reported of
-                false ->
+            case {Monitor, Reported} of
+                {no_monitor, _} ->
+                    io:fwrite("");
+
+                {_, false} ->
                     Monitor ! {ping_recv, ID, TTL, [ID | Route], TransmitStatus};
 
                 _ ->
                     io:fwrite("")
             end,
 
-            main_routine(Monitor, ID, Status, Strategy, Connections, true);
+            main_routine(Monitor, ID, Status, Strategy, Connections, true, TermReported);
 
         _ ->
-            main_routine(Monitor, ID, Status, Strategy, Connections, Reported)
+            main_routine(Monitor, ID, Status, Strategy, Connections, Reported, TermReported)
     end.
 
-
-ping_next(_, _, _, _, 0, _) ->
-    0;
 
 ping_next(ID, Route, StartIndex, Size, TTL, Connections) ->
     lists:foreach(fun({_, Pid}) ->

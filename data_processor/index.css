@@ -49,4 +49,5 @@ td.nested_table {
     display: flex;
     flex-flow: row;
     justify-content: center;
+    max-width: 50%;
 }

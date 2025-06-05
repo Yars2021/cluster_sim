@@ -50,8 +50,8 @@ strat_tables_html = ""
 
 
 def packet_sort_comparator(a, b):
-    [ttl_a, _] = a
-    [ttl_b, _] = b
+    [ttl_a, _, _] = a
+    [ttl_b, _, _] = b
 
     if ttl_a < ttl_b:
         return -1
@@ -62,15 +62,14 @@ def packet_sort_comparator(a, b):
 
 
 for strat in strat_tables:
-    strat_tables_html += f"<hr><h3>Strategy: {strat}</h3><hr><table class=\"tel_table\">"
-    strat_tables_html += f"<tr><th>Node ID</th><th>Transmit status</th><th>Hops of the packet</th><th>Route of the packet</th></tr>"
+    strat_tables_html += f"<hr><h3>Strategy: {strat} ({(len(strat_tables[strat]) / int(sys.argv[3]) * 100):.{3}f}%)</h3><hr><table class=\"tel_table\">"
+    strat_tables_html += f"<tr><th>Node ID</th><th>Hops of the packet</th><th>Route of the packet</th><th>Transmit status</th></tr>"
 
     for node in strat_tables[strat]:
         sorted_nodes = sorted(strat_tables[strat][node], key=functools.cmp_to_key(packet_sort_comparator))
 
-        ping_info = f""
-
         for [status, ttl, route] in sorted_nodes:
+            ping_info = f""
             route_str = ""
 
             for route_node in route:
@@ -79,11 +78,10 @@ for strat in strat_tables:
                 else:
                     route_str += str(route_node) + " => "
 
-            ping_info += f"<td>{status}</td><td>{int(sys.argv[4]) - ttl} of {int(sys.argv[4])}</td><td>{route_str[:-4]}</td>"
+            ping_info += f"<td>{int(sys.argv[4]) - ttl} of {int(sys.argv[4])}</td><td>{route_str[:-4]}</td><td>{status}</td>"
+            strat_tables_html += f"<tr><td>{node}</td>{ping_info}</tr>"
 
-        strat_tables_html += f"<tr><td>{node}</td>{ping_info}</tr>"
-
-    strat_tables_html += "</table>"
+    strat_tables_html += f"</table>"
 
 
 svg_data = ""
@@ -104,6 +102,7 @@ html = f"""
         <div class="info_header">
             <h3>Number of nodes in cluster: {sys.argv[3]}</h3>
             <h3>Packet TTL parameter: {sys.argv[4]}</h3>
+            <hr>
         </div>
         <div class="cluster_image">
             {svg_data}

@@ -65,9 +65,9 @@ cluster_to_graphviz(Info) ->
             _ ->
                 ""
         end
-    end, "", Cluster) ++ "~n\t1 [color=green,shape=Mcircle,style=bold];~n" ++
+    end, "", Cluster) ++ "~n\t1 [color=limegreen,style=bold];~n" ++
     lists:foldl(fun({ID, _}, Acc) ->
-        Acc ++ "\t" ++ integer_to_list(ID) ++ " [color=red];~n"
+        Acc ++ "\t" ++ integer_to_list(ID) ++ " [color=red,style=bold];~n"
     end, "", Broken) ++
     "}~n", [])).
 
@@ -86,7 +86,7 @@ simulate(Starter, LogsFile, Strategy, Timeout, PacketTTL, Info) ->
 
     FirstPid ! {ping, PacketTTL, [0]},
 
-    receive {finish} -> io:fwrite("", []) end,
+    receive {finish} -> io:fwrite("Simulation round finished for ~p.~n", [Strategy]) end,
 
     lists:foreach(fun({_, Pid}) ->
         Pid ! {set_monitor, no_monitor},
@@ -103,7 +103,7 @@ monitor_routine(Main, LogsFile, Cluster, Logs, Timeout) ->
         _ ->
             monitor_routine(Main, LogsFile, Cluster, Logs, Timeout)
 
-    after Timeout ->
+    after 1000 * Timeout ->
         file:write_file(LogsFile, io_lib:fwrite("~p~n", [lists:reverse(Logs)])),
         Main ! {finish}
     end.
@@ -114,8 +114,7 @@ autorun(Strategies, ClusterSize, Edges, BrokenNodes, Starter, Timeout, TTL) ->
     cluster_to_graphviz(Cluster),
 
     lists:foreach(fun(Strategy) ->
-        simulate(Starter, "./data/" ++ strategy_to_str(Strategy) ++ ".info", Strategy, Timeout, TTL, Cluster),
-        receive after 1000 -> io:fwrite("", []) end
+        simulate(Starter, "./data/" ++ strategy_to_str(Strategy) ++ ".info", Strategy, Timeout, TTL, Cluster)
     end, Strategies).
 
 
