@@ -10,7 +10,7 @@ init(Monitor, ID) ->
 main_routine(Monitor, ID, Status, Strategy, Connections, Reported) ->
     receive
         {reset_reported} ->
-            main_routine(NewMonitor, ID, Status, Strategy, Connections, false);
+            main_routine(Monitor, ID, Status, Strategy, Connections, false);
 
         {set_monitor, NewMonitor} ->
             main_routine(NewMonitor, ID, Status, Strategy, Connections, Reported);
