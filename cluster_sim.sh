@@ -42,7 +42,7 @@ elif [ $# -ge 6 ]; then
   # Compile and run Erlang files
   cd ./cluster/
   erlc ./worker.erl ./monitor.erl
-  erl -noshell -run monitor shell_autorun $1 $2 $3 $4 $5 $6 -s init stop 2> /dev/null
+  erl -noshell -run monitor shell_autorun $1 $2 $3 $4 $5 $6 -s init stop > /dev/null 2>&1
   cd ../
 
   # Generate png from .dot file

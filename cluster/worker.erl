@@ -31,29 +31,29 @@ main_routine(Monitor, ID, Status, Strategy, Connections, Reported) ->
         {connect, Node} ->
             main_routine(Monitor, ID, Status, Strategy, lists:sort([Node | Connections]), Reported);
 
-        {ping, From, 0} ->
-            Monitor ! {ping_recv, From, ID, 0, ttl_end},
-            main_routine(Monitor, ID, Status, Strategy, Connections, Reported);
+        {ping, 0, Route} ->
+            Monitor ! {ping_recv, ID, 0, [ID | Route], ttl_end},
+            main_routine(Monitor, ID, Status, Strategy, Connections, true);
 
-        {ping, From, TTL} ->
+        {ping, TTL, Route} ->
             TransmitStatus = case Status of
                 ok ->
                     case Strategy of
                         {single_cast} ->
                             [{_, NextPid} | _] =  Connections,
-                            NextPid ! {ping, ID, TTL - 1},
+                            NextPid ! {ping, TTL - 1, [ID | Route]},
                             ok;
 
                         {multicast, GroupSize} ->
-                            ping_next(ID, 1, GroupSize, TTL - 1, Connections),
+                            ping_next(ID, Route, 1, GroupSize, TTL - 1, Connections),
                             ok;
 
                         {broadcast} ->
-                            ping_next(ID, 1, length(Connections), TTL - 1, Connections),
+                            ping_next(ID, Route, 1, length(Connections), TTL - 1, Connections),
                             ok;
 
                         {gossip} ->
-                            ping_next(ID, rand:uniform(length(Connections)), 1, TTL - 1, Connections),
+                            ping_next(ID, Route, rand:uniform(length(Connections)), 1, TTL - 1, Connections),
                             ok;
 
                         _ -> unknown_strategy
@@ -64,7 +64,7 @@ main_routine(Monitor, ID, Status, Strategy, Connections, Reported) ->
 
             case Reported of
                 false ->
-                    Monitor ! {ping_recv, From, ID, TTL, TransmitStatus};
+                    Monitor ! {ping_recv, ID, TTL, [ID | Route], TransmitStatus};
 
                 _ ->
                     io:fwrite("")
@@ -77,13 +77,10 @@ main_routine(Monitor, ID, Status, Strategy, Connections, Reported) ->
     end.
 
 
-ping_next(_, _, _, 0, _) ->
+ping_next(_, _, _, _, 0, _) ->
     0;
 
-ping_next(ID, StartIndex, Size, TTL, Connections) when Size > length(Connections) ->
-    ping_next(ID, StartIndex, length(Connections), TTL, Connections);
-
-ping_next(ID, StartIndex, Size, TTL, Connections) ->
+ping_next(ID, Route, StartIndex, Size, TTL, Connections) ->
     lists:foreach(fun({_, Pid}) ->
-        Pid ! {ping, ID, TTL}
+        Pid ! {ping, TTL, [ID | Route]}
     end, lists:sublist(Connections, StartIndex, Size)).

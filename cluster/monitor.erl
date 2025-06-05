@@ -65,7 +65,7 @@ cluster_to_graphviz(Info) ->
             _ ->
                 ""
         end
-    end, "", Cluster) ++ "~n1 [color=green];~n" ++
+    end, "", Cluster) ++ "~n\t1 [color=green,shape=Mcircle,style=bold];~n" ++
     lists:foldl(fun({ID, _}, Acc) ->
         Acc ++ "\t" ++ integer_to_list(ID) ++ " [color=red];~n"
     end, "", Broken) ++
@@ -84,7 +84,7 @@ simulate(Starter, LogsFile, Strategy, Timeout, PacketTTL, Info) ->
         Pid ! {strategy, Strategy}
     end, Cluster),
 
-    FirstPid ! {ping, 0, PacketTTL},
+    FirstPid ! {ping, PacketTTL, [0]},
 
     receive {finish} -> io:fwrite("", []) end,
 
@@ -97,8 +97,8 @@ simulate(Starter, LogsFile, Strategy, Timeout, PacketTTL, Info) ->
 
 monitor_routine(Main, LogsFile, Cluster, Logs, Timeout) ->
     receive
-        {ping_recv, From, ID, RecvTTL, Status} ->
-            monitor_routine(Main, LogsFile, Cluster, [[ID, From, RecvTTL, atom_to_list(Status)] | Logs], Timeout);
+        {ping_recv, ID, RecvTTL, Route, Status} ->
+            monitor_routine(Main, LogsFile, Cluster, [[ID, RecvTTL, atom_to_list(Status), lists:reverse(Route)] | Logs], Timeout);
 
         _ ->
             monitor_routine(Main, LogsFile, Cluster, Logs, Timeout)
