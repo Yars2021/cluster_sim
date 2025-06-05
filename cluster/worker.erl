@@ -4,36 +4,36 @@
 
 
 init(Monitor, ID) ->
-    main_routine(Monitor, ID, ok, not_specified, []).
+    main_routine(Monitor, ID, ok, not_specified, [], false).
 
 
-main_routine(Monitor, ID, Status, Strategy, Connections) ->
+main_routine(Monitor, ID, Status, Strategy, Connections, Reported) ->
     receive
         {set_monitor, NewMonitor} ->
-            main_routine(NewMonitor, ID, Status, Strategy, Connections);
+            main_routine(NewMonitor, ID, Status, Strategy, Connections, Reported);
 
         {get_connections, Requester} ->
             Requester ! {Connections},
-            main_routine(Monitor, ID, Status, Strategy, Connections);
+            main_routine(Monitor, ID, Status, Strategy, Connections, Reported);
 
         {break} ->
-            main_routine(Monitor, ID, broken, Strategy, Connections);
+            main_routine(Monitor, ID, broken, Strategy, Connections, Reported);
 
         {fix} ->
-            main_routine(Monitor, ID, ok, Strategy, Connections);
+            main_routine(Monitor, ID, ok, Strategy, Connections, Reported);
 
         {strategy, NewStrategy} ->
-            main_routine(Monitor, ID, Status, NewStrategy, Connections);
+            main_routine(Monitor, ID, Status, NewStrategy, Connections, Reported);
 
         {connect, Node} ->
-            main_routine(Monitor, ID, Status, Strategy, lists:sort([Node | Connections]));
+            main_routine(Monitor, ID, Status, Strategy, lists:sort([Node | Connections]), Reported);
 
         {ping, From, 0} ->
             Monitor ! {ping_recv, From, ID, 0, ttl_end},
-            main_routine(Monitor, ID, Status, Strategy, Connections);
+            main_routine(Monitor, ID, Status, Strategy, Connections, Reported);
 
         {ping, From, TTL} ->
-            Monitor ! {ping_recv, From, ID, TTL, case Status of
+            TransmitStatus = case Status of
                 ok ->
                     case Strategy of
                         {single_cast} ->
@@ -57,12 +57,20 @@ main_routine(Monitor, ID, Status, Strategy, Connections) ->
                     end;
 
                 _ -> ping_fail
-            end},
+            end,
 
-            main_routine(Monitor, ID, Status, Strategy, Connections);
+            case Reported of
+                false ->
+                    Monitor ! {ping_recv, From, ID, TTL, TransmitStatus};
+
+                _ ->
+                    io:fwrite("")
+            end,
+
+            main_routine(Monitor, ID, Status, Strategy, Connections, true);
 
         _ ->
-            main_routine(Monitor, ID, Status, Strategy, Connections)
+            main_routine(Monitor, ID, Status, Strategy, Connections, Reported)
     end.
 
 

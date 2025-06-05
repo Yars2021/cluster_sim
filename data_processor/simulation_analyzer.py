@@ -52,7 +52,7 @@ strat_tables_html = ""
 for strat in strat_tables:
     strat_tables_html += f"<hr><h3>Strategy: {strat}</h3><hr><table class=\"tel_table\">"
 
-    strat_tables_html += f"<tr><th>Node ID</th><th>Transmit status</th><th>Ping info</th></tr>"
+    strat_tables_html += f"<tr><th>Node ID</th><th>Transmit status</th><th>First received ping info</th></tr>"
 
     for node in strat_tables[strat]:
         ping_info = f"<table class=\"ping_table\"><tr><th>Source</th><th>Hops it took to reach</th></tr>"
