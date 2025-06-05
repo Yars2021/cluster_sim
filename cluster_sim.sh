@@ -11,6 +11,8 @@ elif [[ $1 = "help" ]]; then
   echo "|       Welcome to Cluster ping simulator v1.0       |"
   echo "======================================================"
   echo "Required packages: erlang-devel, python3, graphviz"
+  echo "cluster_sim help"
+  echo "cluster_sim clean"
   echo "cluster_sim
     <list of strategies>
     <num of nodes>
@@ -40,7 +42,7 @@ elif [ $# -ge 6 ]; then
   # Compile and run Erlang files
   cd ./cluster/
   erlc ./worker.erl ./monitor.erl
-  erl -noshell -run monitor shell_autorun $1 $2 $3 $4 $5 $6 -s init stop
+  erl -noshell -run monitor shell_autorun $1 $2 $3 $4 $5 $6 -s init stop 2> /dev/null
   cd ../
 
   # Generate png from .dot file

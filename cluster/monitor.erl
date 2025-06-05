@@ -30,7 +30,7 @@ read_term(Arg) ->
 
 
 create_cluster(ClusterSize, Edges, BrokenNodes) ->
-    Cluster = [{ID, spawn(fun() -> worker:init(self(), ID) end)} || ID <- lists:seq(1, ClusterSize)],
+    Cluster = [{ID, spawn(fun() -> worker:init(no_monitor, ID) end)} || ID <- lists:seq(1, ClusterSize)],
 
     lists:foreach(fun({_, PidFrom}) ->
         lists:foreach(fun(NodeTo) ->
@@ -89,8 +89,9 @@ simulate(Starter, LogsFile, Strategy, Timeout, PacketTTL, Info) ->
     receive {finish} -> io:fwrite("", []) end,
 
     lists:foreach(fun({_, Pid}) ->
-        Pid ! {set_monitor, not_specified},
-        Pid ! {strategy, not_specified}
+        Pid ! {set_monitor, no_monitor},
+        Pid ! {strategy, not_specified},
+        Pid ! {reset_reported}
     end, Cluster).
 
 

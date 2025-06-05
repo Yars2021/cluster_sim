@@ -49,15 +49,28 @@ for file in [file for file in listdir(sys.argv[1]) if isfile(join(sys.argv[1], f
 strat_tables_html = ""
 
 
+def packet_sort_comparator(a, b):
+    [_, ttl_a] = a
+    [_, ttl_b] = b
+
+    if ttl_a < ttl_b:
+        return -1
+    elif i_a == i_b:
+        return 0
+    else:
+        return 1
+
+
 for strat in strat_tables:
     strat_tables_html += f"<hr><h3>Strategy: {strat}</h3><hr><table class=\"tel_table\">"
-
     strat_tables_html += f"<tr><th>Node ID</th><th>Transmit status</th><th>First received ping info</th></tr>"
 
     for node in strat_tables[strat]:
+        sorted_srcs = sorted(strat_tables[strat][node][1], key=functools.cmp_to_key(packet_sort_comparator))
+
         ping_info = f"<table class=\"ping_table\"><tr><th>Source</th><th>Hops it took to reach</th></tr>"
 
-        for [src, ttl] in strat_tables[strat][node][1]:
+        for [src, ttl] in sorted_srcs:
             if src == 0:
                 src_str = "Monitor"
             else:
