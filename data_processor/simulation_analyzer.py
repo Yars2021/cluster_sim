@@ -84,8 +84,14 @@ for strat in strat_tables:
     strat_tables_html += f"</table>"
 
 
-svg_data = ""
+css = ""
 
+with open(f"./data_processor/index.css", "r") as file:
+    for line in file:
+        css += line
+
+
+svg_data = ""
 
 with open(f"{sys.argv[2]}/cluster.svg", "r") as file:
     for line in file:
@@ -96,7 +102,9 @@ html = f"""
 <html>
     <head>
         <title>Cluster sim results</title>
-        <link href="../data_processor/index.css" rel="stylesheet">
+        <style>
+            {css}
+        </style>
     </head>
     <body>
         <div class="info_header">
