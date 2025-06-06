@@ -88,10 +88,25 @@ simulate(Starter, LogsFile, Strategy, Timeout, PacketTTL, Info) ->
 
     receive {finish} -> io:fwrite("Simulation round finished for ~p.~n", [Strategy]) end,
 
+    SentStats = lists:map(fun({ID, Pid}) ->
+        Pid ! {get_sent, self()},
+
+        receive
+            {Sent} ->
+                [ID, Sent];
+
+            _ ->
+                [ID, 0]
+        end
+    end, Cluster),
+
+    file:write_file(LogsFile ++ ".sent", io_lib:fwrite("~w~n", [SentStats])),
+
     lists:foreach(fun({_, Pid}) ->
         Pid ! {set_monitor, no_monitor},
         Pid ! {strategy, not_specified},
-        Pid ! {reset_reported}
+        Pid ! {reset_reported},
+        Pid ! {reset_sent}
     end, Cluster).
 
 

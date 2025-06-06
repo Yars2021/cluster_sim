@@ -33,11 +33,19 @@ def read_strat_file(filepath):
 
 
 strat_tables = {}
+sent_stats = {}
 
 
 for file in [file for file in listdir(sys.argv[1]) if isfile(join(sys.argv[1], file))]:
     if file[-5:] == ".info":
+        sent_stat = ""
+
+        with open(f"{sys.argv[1]}/{file[:-5]}.info.sent", "r") as sent_file:
+            for line in sent_file:
+                sent_stat += line
+
         strat_tables[file[:-5]] = {}
+        sent_stats[file[:-5]] = ast.literal_eval(sent_stat)
 
         for [node, ttl, status, route] in read_strat_file(f"{sys.argv[1]}/{file}"):
             if node not in strat_tables[file[:-5]]:
@@ -81,7 +89,15 @@ for strat in strat_tables:
             ping_info += f"<td>{int(sys.argv[4]) - ttl} of {int(sys.argv[4])}</td><td>{route_str[:-4]}</td><td>{status}</td>"
             strat_tables_html += f"<tr><td>{node}</td>{ping_info}</tr>"
 
-    strat_tables_html += f"</table>"
+    strat_tables_html += f"</table><div class=\"small_table\"><table class=\"tel_table_small\"><tr><th>Node ID</th><th>Packets sent by node</th></tr>"
+
+    sum = 0
+
+    for i in range(len(sent_stats[strat])):
+        strat_tables_html += f"<tr><td>{i + 1}</td><td>{sent_stats[strat][i][1]}</td></tr>"
+        sum += sent_stats[strat][i][1]
+
+    strat_tables_html += f"<tr><th>SUM</th><th>{sum}</th></tr></table></div>"
 
 
 css = ""
